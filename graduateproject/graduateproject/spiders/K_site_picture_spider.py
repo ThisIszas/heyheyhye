@@ -8,10 +8,16 @@ import time
 from scrapy.http import Request
 from graduateproject.items import GraduateprojectItem
 
+
 class PicSpider(RedisSpider):
     def __init__(self, **kwargs):
         self.crawl_count = 1
+        self.sensitive_words = ['breasts', 'censored', 'anus', 'uncensored', 'penis',
+                                'pussy', 'nopan', 'cum', 'ass', 'anal', 'nude', 'sex', 'spread_legs', 'nipples',
+                                'blush', 'wet', 'no bra', 'open_shirt', 'fingering', 'panties', 'panty_pull', 'yuri',
+                                '2girls', 'cropped', 'underwear']
         super(PicSpider, self).__init__(**kwargs)
+
        # self.save_tools = insert_to_SQL.SaveInfo()
 
     name = 'kSitePicSpider'
@@ -35,26 +41,48 @@ class PicSpider(RedisSpider):
             temp_urls = 'http://konachan.com' + each
             yield Request(temp_urls, callback=self.parse_content)
 
-        # if next_page_url:
-        #     """
-        #     This is the sample of next_page_url[0]: '/post?page=3&amp;tags='
-        #     """
-        #     interval_time = random.uniform(2, 5)
-        #     time.sleep(interval_time)
-        #     real_next_page_url = 'http://konachan.com' + next_page_url[0]
-        #     print 'Next page url is: ' + real_next_page_url
-        #     yield Request(real_next_page_url, callback=self.parse)
+        if next_page_url:
+            """
+            This is the sample of next_page_url[0]: '/post?page=3&amp;tags='
+            """
+            interval_time = random.uniform(2, 5)
+            time.sleep(interval_time)
+            real_next_page_url = 'http://konachan.com' + next_page_url[0]
+            print 'Next page url is: ' + real_next_page_url
+            yield Request(real_next_page_url, callback=self.parse)
 
     def parse_content(self, response):
+        sensitive_word_appear_time = 0
         item = GraduateprojectItem()
         selector = Selector(response)
+        tags = selector.xpath('//body//div[@id="content"]/div[@id="post-view"]/div[@class="sidebar"]'
+                              '/div/ul[@id="tag-sidebar"]/li/@data-name').extract()
+        tag_lens = len(tags)
+
+        for each in tags:
+            # print each
+            if each in self.sensitive_words:
+                print 'sensitive_words is: ' + each
+                print '\t\tdetected sensitive words'
+                print "\t\tWarning: This picture may not satisfied."
+                sensitive_word_appear_time += 1
+                if sensitive_word_appear_time >= 3:
+                    print '\t\t\tThis picture is passed\n'
+                    print response.url
+                    print
+                    return
+        if sensitive_word_appear_time == tag_lens:
+            print '\t\tThis picture is passed'
+            print response.url
+            print
+            return
+
         real_pic_urls = selector.xpath('//body//div[@id="content"]/div[@id="post-view"]'
                                        '/div[@id="right-col"]/div/img/@src').extract()[0]
         """
         This is the sample of real_pic_urls: '//konachan.com/sample/4078e1c671f280d7569795cfa6de8f76
                                             /Konachan.com%20-%20239609%20sample.jpg'
         """
-        # real_pic_urls = re.sub('//', '', real_pic_urls)
         real_pic_urls = 'http:' + real_pic_urls
         """
         This is the sample of final real_pic_urls: 'http://konachan.com/sample/4078e1c671f280d7569795cfa6de8f76
