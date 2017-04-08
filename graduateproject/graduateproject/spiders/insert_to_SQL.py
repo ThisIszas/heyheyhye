@@ -3,7 +3,7 @@ import MySQLdb
 
 class SaveInfo:
     def __init__(self):
-        self.db = MySQLdb.Connection('119.29.232.243', 'thisiszas', '123456.qaz', 'K_site_pic_address_db', charset='utf8')
+        self.db = MySQLdb.Connection('', '', '', '', charset='utf8')
         self.cursor = self.db.cursor()
 
     def insert_info(self, pic_urls):
