@@ -8,7 +8,7 @@
 from scrapy import Item, Field
 
 
-class GraduateprojectItem(Item, Field):
+class GraduateprojectItem(Item):
     url_address = Field()
 
     # define the fields for your item here like:
