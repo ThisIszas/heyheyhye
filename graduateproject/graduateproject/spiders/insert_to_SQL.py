@@ -3,11 +3,21 @@ import MySQLdb
 
 class SaveInfo:
     def __init__(self):
-        self.db = MySQLdb.Connection('', '', '', '', charset='utf8')
+        self.db = MySQLdb.Connection('localhost', 'username', 'password', 'dbname', charset='utf8')
         self.cursor = self.db.cursor()
 
     def insert_info(self, pic_urls):
-        sql = u'insert INTO pic_urls VALUES (\'%s\')' % pic_urls
+        sql = u'insert INTO urls VALUES (\'%s\')' % pic_urls
+        print sql
+        self.execute_statement(sql)
+
+    def insert_questionable_info(self, pic_urls):
+        sql = u'insert INTO questionable_urls VALUES (\'%s\')' % pic_urls
+        print sql
+        self.execute_statement(sql)
+
+    def insert_passed_info(self, pic_urls):
+        sql = u'insert INTO passed_urls VALUES (\'%s\')' % pic_urls
         print sql
         self.execute_statement(sql)
 

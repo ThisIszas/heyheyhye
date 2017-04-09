@@ -24,3 +24,13 @@ MONGODB_HOST = '127.0.0.1'
 MONGODB_PORT = 27017
 MONGODB_DBNAME = 'test_232'
 MONGODB_DOCNAME = 'filter_pic_urls'
+
+# MYSQL_HOST = '127.0.0.1'
+# MYSQL_PORT = 3306
+# MYSQL_DBNAME = 'test_232'
+# MYSQL_DOCNAME = 'filter_pic_urls'
+
+MYSQL_HOST = 'localhost'
+MYSQL_DBNAME = 'K_SITE_PIC_URLS;'
+MYSQL_USER = 'root'
+MYSQL_PASSWD = '123456.qaz'

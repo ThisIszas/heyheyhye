@@ -1,5 +1,5 @@
 # coding:utf-8
-# import insert_to_SQL
+import insert_to_SQL
 import random
 from scrapy_redis.spiders import RedisSpider
 from scrapy.selector import Selector
@@ -7,6 +7,7 @@ import re
 import time
 from scrapy.http import Request
 from graduateproject.items import GraduateprojectItem
+from termcolor import colored, cprint
 
 
 class PicSpider(RedisSpider):
@@ -18,13 +19,13 @@ class PicSpider(RedisSpider):
                                 '2girls', 'cropped', 'underwear']
         super(PicSpider, self).__init__(**kwargs)
 
-       # self.save_tools = insert_to_SQL.SaveInfo()
+        self.save_tools = insert_to_SQL.SaveInfo()
 
     name = 'kSitePicSpider'
-    start_urls = ['http://konachan.com/post']
+    start_urls = ['http://konachan.com/post?page=23&amp;tags=']
     redis_key = 'k_site_pic_spider:start_urls'
 
-    def parse(self, response, pagenum=2):
+    def parse(self, response):
         # print response.body  # 源码
         print 'Now is crawl on page: ' + response.url
         print
@@ -33,6 +34,8 @@ class PicSpider(RedisSpider):
                                       '/div/ul[@id="post-list-posts"]/li/div/a/@href').extract()
         print 'The amount of picture on this page is: ' + str(len(all_pic_urls))
         next_page_url = re.findall('next\" href=\"(.*?)\"', response.body, re.S)
+        for e in next_page_url:
+            print e
 
         for each in all_pic_urls:
             """
@@ -42,6 +45,7 @@ class PicSpider(RedisSpider):
             yield Request(temp_urls, callback=self.parse_content)
 
         if next_page_url:
+            print 'Start crawl next page.'
             """
             This is the sample of next_page_url[0]: '/post?page=3&amp;tags='
             """
@@ -58,22 +62,33 @@ class PicSpider(RedisSpider):
         tags = selector.xpath('//body//div[@id="content"]/div[@id="post-view"]/div[@class="sidebar"]'
                               '/div/ul[@id="tag-sidebar"]/li/@data-name').extract()
         tag_lens = len(tags)
-
+        print "tag length is:" + str(tag_lens)
         for each in tags:
             # print each
-            if each in self.sensitive_words:
+            if each == ('nipples' or 'sex'):
+                print 'sensitive_words is: ' + each
+                # print '\t\t\tThis picture is passed\n'
+                cprint('\t\t\tThis picture is passed\n', 'green', 'on_red')
+                print response.url
+                self.save_tools.insert_passed_info(response.url)
+                print
+                return
+
+            elif each in self.sensitive_words:
                 print 'sensitive_words is: ' + each
                 print '\t\tdetected sensitive words'
                 print "\t\tWarning: This picture may not satisfied."
                 sensitive_word_appear_time += 1
-                if sensitive_word_appear_time >= 3:
-                    print '\t\t\tThis picture is passed\n'
+                if sensitive_word_appear_time >= 4:
+                    cprint('\t\t\tThis picture is passed\n', 'green', 'on_red')
                     print response.url
+                    self.save_tools.insert_passed_info(response.url)
                     print
                     return
         if sensitive_word_appear_time == tag_lens:
-            print '\t\tThis picture is passed'
+            cprint('\t\t\tThis picture is passed\n', 'green', 'on_red')
             print response.url
+            self.save_tools.insert_passed_info(response.url)
             print
             return
 
@@ -89,7 +104,12 @@ class PicSpider(RedisSpider):
                                                     /Konachan.com%20-%20239609%20sample.jpg'
         """
         print 'The real pic adress is: ' + real_pic_urls
-       # self.save_tools.insert_info(real_pic_urls)
+        if sensitive_word_appear_time == 3:
+            self.save_tools.insert_questionable_info(real_pic_urls)
+            print '\t\t\tThis picture is questionable\n'
+            return
+
+        self.save_tools.insert_info(real_pic_urls)
         item['url_address'] = real_pic_urls
         interval_time = random.uniform(2, 5)
         time.sleep(interval_time)
